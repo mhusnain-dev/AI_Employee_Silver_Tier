@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.obsidian/
+.claude/
+status.json
+credentials.json

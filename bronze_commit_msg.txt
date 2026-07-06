@@ -1,0 +1,14 @@
+Initialize Bronze Tier foundation
+
+- Create Dashboard.md and Company_Handbook.md in AI_Employee_Vault
+- Add folder structure Inbox/Needs_Action/Done
+- Implement three agent skills: filesystem_watcher.py, update_dashboard.py, vault_sync.py
+- Add basic README with instructions
+
+This commit records the baseline for Bronze Tier, satisfying all
+requirements outlined in the hackathon brief: Obsidian vault with
+Dashboard.md and Company_Handbook.md, a working watcher script,
+Claude Code read/write capability, and basic folder structure.
+All functionality is packaged as agent skills.
+
+Authored-By: Muhammad Husnain
