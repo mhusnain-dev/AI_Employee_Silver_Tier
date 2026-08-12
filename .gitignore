@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .obsidian/
-.claude/
+.claude/*
+!.claude/skills/
 status.json
 credentials.json
