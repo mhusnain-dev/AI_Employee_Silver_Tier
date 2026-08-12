@@ -1,1 +1,4 @@
 watchdog>=4.0
+google-api-python-client>=2.130
+google-auth-oauthlib>=1.2
+mcp>=1.0

@@ -6,3 +6,8 @@ __pycache__/
 !.claude/skills/
 status.json
 credentials.json
+token.json
+*.cache.json
+.env
+known_contacts.json
+*.pid

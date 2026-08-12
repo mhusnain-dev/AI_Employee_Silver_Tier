@@ -12,7 +12,12 @@ the Agent Skills in `.claude/skills/` to read tasks and write reports.
 - `Inbox/` – Drop new items here; the `filesystem-watcher` skill moves them on.
 - `Needs_Action/` – Items currently being processed (in progress).
 - `Done/` – Completed items.
-- `.claude/skills/` – Agent Skills (Bronze-Tier requirement).
+- `Plans/` – Reasoning artifacts: `PLAN_*.md` with checkbox steps.
+- `Pending_Approval/` – Sensitive actions waiting for human approval.
+- `Approved/` – Actions the human approved; execution may proceed.
+- `Rejected/` – Actions the human declined.
+- `Logs/` – Audit trail of executed actions (`YYYY-MM-DD.json`).
+- `.claude/skills/` – All Agent Skill implementations.
 
 ## Bronze-Tier Skills
 
@@ -22,16 +27,34 @@ the Agent Skills in `.claude/skills/` to read tasks and write reports.
 | `dashboard-updater` | `update_dashboard.py` | Regenerate `Dashboard.md` from current folder state + `status.json`. |
 | `vault-sync` | `vault_sync.py` | Prove vault read/write by appending a sync marker to `Dashboard.md`. |
 
-All AI functionality is packaged as Agent Skills (see
-platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
+## Silver-Tier Skills
+
+| Skill | Script | Purpose |
+|-------|--------|---------|
+| `gmail-watcher` | `gmail_watcher.py` | Poll Gmail for unread/important emails → `Needs_Action/EMAIL_*.md`. `--mock` for testing. |
+| `plan-creator` | `plan_template.py` | Create `Plans/PLAN_*.md` with checkbox steps from `Needs_Action/` items. |
+| `approval-workflow` | `approval_tracker.py` | Manage `Pending_Approval/` → `Approved/`/`Rejected/` → log to `Logs/`. |
+| `linkedin-poster` | `create_post.py` / `publish_post.py` | Draft LinkedIn posts to `Pending_Approval/`, approve → ready-to-post artifact (safe mode). |
+| `scheduler` | `scheduler.py` | Run watchers + dashboard on interval; cron & Windows Task Scheduler examples. |
+
+## Email MCP Server
+
+Custom Python MCP server (stdio) exposing Gmail tools to Claude Code:
+- `search_email(query)` — find emails
+- `draft_email(to, subject, body)` — create Gmail draft
+- `send_email(to, subject, body)` — send only after approval (or known-contact auto-send)
+
+Registered via `.mcp.json`. Run `authenticate.py` once to create `token.json`.
 
 ## Daily Operating Loop
 
-1. Run the watcher: `python .claude/skills/filesystem-watcher/filesystem_watcher.py`
-   (or rely on a scheduled/always-on process).
-2. When new items land in `Needs_Action/`, process them and move them to `Done/`.
-3. Refresh the dashboard: `python .claude/skills/dashboard-updater/update_dashboard.py`.
-4. Keep `status.json` as the audit trail; never commit it (gitignored).
+1. Run the watchers: `python .claude/skills/scheduler/scheduler.py --once`
+   (or rely on cron/Task Scheduler for continuous operation).
+2. When items appear in `Needs_Action/`, use `plan-creator` to write `Plans/PLAN_*.md`.
+3. Execute safe steps; for sensitive actions (email to new contacts, LinkedIn posts),
+   write `Pending_Approval/` files and wait for human to move to `Approved/`.
+4. On approval, execute via MCP server or skill, then archive with `approval-tracker`.
+5. Refresh dashboard: `python .claude/skills/dashboard-updater/update_dashboard.py`.
 
 ## Bronze-Tier Compliance (completed)
 
@@ -41,20 +64,38 @@ platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
 - ✅ Folder structure: `Inbox/`, `Needs_Action/`, `Done/`
 - ✅ All AI functionality implemented as Agent Skills (`.claude/skills/`)
 
-## Next Steps (Silver Tier)
+## Silver-Tier Compliance (completed)
 
-1. **Gmail integration** – extend `filesystem-watcher` (or add an
-   `email-watcher` skill) polling the Gmail API for new messages.
-2. **Enhanced dashboard** – aggregate email data and richer metrics.
-3. **Scheduler / cron** – run watcher + dashboard updater on an interval.
-4. **Unit tests** – `pytest` for each skill.
-5. **Human-in-the-loop** – `/Pending_Approval` → `/Approved` approval workflow
-   before external actions (per hackathon doc, Silver Tier).
-6. **MCP server** for external actions (e.g., sending email).
+- ✅ Two+ watchers: `filesystem-watcher` + `gmail-watcher` (with `--mock` mode)
+- ✅ LinkedIn auto-post: draft → approval → ready-to-post artifact (safe mode)
+- ✅ Plan.md creation loop: `plan-creator` skill + documented operating loop
+- ✅ One working MCP server: custom Python email MCP (search/draft/send + approval gating)
+- ✅ HITL approval workflow: `Pending_Approval/` → `Approved/`/`Rejected/` → log to `Logs/`
+- ✅ Scheduling: `scheduler` skill + Linux cron & Windows Task Scheduler examples
+- ✅ All AI functionality as Agent Skills (`.claude/skills/`)
 
 ## Security Rules
 
 - Credentials never live in the vault. Use `.env` (gitignored) or a secrets
-  manager; never commit `credentials.json` or `status.json`.
+  manager; never commit `credentials.json`, `token.json`, `status.json`,
+  `*.cache.json`, `known_contacts.json`, `.venv/`.
 - All external actions must be logged and (for sensitive actions) require
   human approval before execution.
+- Permission boundary (doc §6.4): replies to known contacts auto-send; new
+  contacts, bulk sends, payments always require approval.
+
+## Testing Without Credentials
+
+Most skills support `--mock` or `--dry-run` for verification without real
+Gmail/LinkedIn accounts:
+
+```bash
+# Gmail watcher
+python .claude/skills/gmail-watcher/gmail_watcher.py --mock --once
+
+# Email MCP server
+python mcp-servers/email_mcp/server.py --mock
+
+# Scheduler one-shot
+python .claude/skills/scheduler/scheduler.py --once
+```

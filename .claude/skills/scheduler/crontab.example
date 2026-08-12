@@ -1,0 +1,17 @@
+# AI Employee Vault — Example crontab
+# Install: crontab crontab.example
+# Adjust VAULT_PATH to your actual path
+
+VAULT_PATH=/home/you/ai-employee-vault
+PYTHON=$VAULT_PATH/.venv/bin/python
+SCHEDULER=$VAULT_PATH/.claude/skills/scheduler/scheduler.py
+LOG=$VAULT_PATH/Logs/scheduler.log
+
+# Every 5 minutes: run watchers + dashboard updater
+*/5 * * * * $PYTHON $SCHEDULER --once >> $LOG 2>&1
+
+# Daily briefing at 8:00 AM (hackathon doc §3)
+0 8 * * * $PYTHON $SCHEDULER --once >> $LOG 2>&1
+
+# Weekly cleanup (optional) — archive old logs
+0 2 * * 0 find $VAULT_PATH/Logs -name "*.json" -mtime +90 -delete
