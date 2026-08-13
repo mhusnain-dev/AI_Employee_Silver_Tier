@@ -120,4 +120,4 @@ python .claude/skills/scheduler/scheduler.py --once
 - Sensitive external actions require human approval (per hackathon brief,
   Section 6).
 - Permission boundary (doc §6.4): replies to known contacts auto-send; new
-  contacts, bulk sends, payments always need approval.
+  contacts, bulk sends, payments always need approval from human.
