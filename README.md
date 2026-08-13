@@ -3,7 +3,7 @@
 Local-first Obsidian vault powering a Personal AI Employee (Claude Code +
 Obsidian), built to the "Personal AI Employee Hackathon 0" Silver Tier brief.
 
-## Directory Layout
+## Directory-Layout
 
 - **Dashboard.md** – Real-time status and metrics (auto-regenerated).
 - **Company_Handbook.md** – Mission, principles, and getting-started guide.
